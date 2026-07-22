@@ -1,0 +1,30 @@
+{
+  "short_name": "XỐPKER",
+  "name": "XỐPKER - Quản lý Bao Xốp",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#B41C8C",
+  "display": "standalone",
+  "theme_color": "#B41C8C"
+}

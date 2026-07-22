@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Function to get user data from users collection
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Function to check roles
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'Admin';
+    }
+
+    function isManager() {
+      return isAuthenticated() && (getUserData().role == 'Manager' || getUserData().role == 'Admin');
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (getUserData().role == 'Staff' || getUserData().role == 'Manager' || getUserData().role == 'Admin');
+    }
+
+    function isActive() {
+      return isAuthenticated() && getUserData().isActive == true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || userId == request.auth.token.email);
+      allow update: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+      allow delete: if isAdmin() || (isAuthenticated() && (request.auth.uid == userId || userId == request.auth.token.email));
+    }
+
+    // BagTypes Collection (Read-only for all active users)
+    match /bagTypes/{document=**} {
+      allow read: if isActive();
+      allow write: if false; // System defined
+    }
+
+    // Departments Collection (Read-only for all active users)
+    match /departments/{document=**} {
+      allow read: if isActive();
+      allow write: if isAdmin();
+    }
+
+    // Inventory Collection
+    match /inventory/{document=**} {
+      allow read: if isActive();
+      allow write: if (isStaff() || isAdmin()) && isActive();
+      allow delete: if isAdmin() && isActive();
+    }
+
+    // Transactions (Imports, Exports, Borrows, Checks)
+    match /imports/{document=**} {
+      allow read: if isActive();
+      allow create: if isManager() && isActive();
+      allow delete: if isAdmin() && isActive();
+    }
+
+    match /exports/{document=**} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive();
+      allow delete: if isAdmin() && isActive();
+    }
+
+    match /borrowReturns/{document=**} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive();
+      allow update: if isStaff() && isActive();
+      allow delete: if isAdmin() && isActive();
+    }
+
+    match /stockChecks/{document=**} {
+      allow read: if isActive();
+      allow create: if isStaff() && isActive();
+      allow delete: if isAdmin() && isActive();
+    }
+
+    // Settings
+    match /settings/{document=**} {
+      allow read: if isActive();
+      allow write: if isAdmin() && isActive();
+    }
+
+    // Activity Logs
+    match /activityLogs/{document=**} {
+      allow read: if isManager() && isActive();
+      allow create: if isStaff() && isActive();
+      allow update: if false;
+      allow delete: if isAdmin() && isActive();
+    }
+  }
+}
